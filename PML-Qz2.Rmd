@@ -1,0 +1,94 @@
+---
+title: "Pract.ML Quiz 2"
+author: "Gerrit Versteeg"
+date: "July 14th, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 2. Question 2
+```{r Q2, echo=TRUE, message=FALSE, warning=FALSE}
+library(AppliedPredictiveModeling)
+data(concrete)
+library(caret)
+library(Hmisc)
+set.seed(1000)
+inTrain = createDataPartition(mixtures$CompressiveStrength, p = 3/4)[[1]]
+training = mixtures[ inTrain,]
+testing = mixtures[-inTrain,]
+attach(training)
+qplot(seq_along(CompressiveStrength),CompressiveStrength)
+```
+
+
+## 3. Question 3
+```{r Q3, echo=TRUE, message=FALSE, warning=FALSE}
+library(AppliedPredictiveModeling)
+data(concrete)
+library(caret)
+library(Hmisc)
+set.seed(1000)
+inTrain = createDataPartition(mixtures$CompressiveStrength, p = 3/4)[[1]]
+training = mixtures[ inTrain,]
+testing = mixtures[-inTrain,]
+attach(training)
+hist(Superplasticizer)
+lSP <- log10(Superplasticizer+1)
+hist(lSP)
+```
+
+
+## 4. Question 4
+```{r Q4, echo=TRUE, message=FALSE, warning=FALSE}
+library("dplyr", quietly=TRUE, warn.conflicts = FALSE)     ## for data prep
+library("ggplot2", quietly=TRUE, warn.conflicts = FALSE)   ## for the graphs
+library("caret", quietly=TRUE, warn.conflicts = FALSE)  ## for the data iself
+library("AppliedPredictiveModeling", quietly=TRUE, warn.conflicts = FALSE)  ## for the data iself
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+TrDF <- tbl_df(training)
+TrDFs <- select(TrDF, diagnosis, starts_with("IL"))
+preProc <- preProcess(TrDFs[,-1], method="pca", thresh = 0.8)
+preProc$numComp
+```
+
+## 5. Question 5
+```{r Q5a, echo=TRUE, message=FALSE, warning=FALSE}
+library("dplyr", quietly=TRUE, warn.conflicts = FALSE)     ## for data prep
+library("ggplot2", quietly=TRUE, warn.conflicts = FALSE)   ## for the graphs
+library("caret", quietly=TRUE, warn.conflicts = FALSE)  ## for the data iself
+library("AppliedPredictiveModeling", quietly=TRUE, warn.conflicts = FALSE)  ## for the data iself
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+TrDF <- tbl_df(training)
+TrDFs <- select(TrDF, diagnosis, starts_with("IL"))
+TsDF <- tbl_df(testing)
+TsDFs <- select(TsDF, diagnosis, starts_with("IL"))
+### Basic modeling
+fitBase <- train(diagnosis~.,method="glm",data=TrDFs)
+confusionMatrix(TsDFs$diagnosis,predict(fitBase,TsDFs))
+```
+
+```{r Q5b, echo=TRUE, message=FALSE, warning=FALSE}
+### PCA preprocessed modeling
+preProc <- preProcess(TrDFs[,-1], method="pca", thresh = 0.8) ## Preproc-model
+trainPC<-predict(preProc,TrDFs[,-1])  ## DF zonder diagnosis, alleen 7 PC's !
+## onderstaande werkt niet als niet ook de outcome in DF zit !
+## de outcome komt uit TrDFs, terwijl de pred's uit trainPC komen
+## fitPC <- train(TrDFs$diagnosis ~ ., method="glm", data=trainPC)
+fitPC <- train(x=trainPC, y=TrDFs$diagnosis, method="glm")
+testPC<-predict(preProc,TsDFs[,-1])
+confusionMatrix(TsDFs$diagnosis,predict(fitPC,testPC))
+```
